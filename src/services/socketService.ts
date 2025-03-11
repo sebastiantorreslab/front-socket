@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:3002";
+const SOCKET_URL = "https://jh485f3t-3002.use.devtunnels.ms/";
 
 let socket: Socket;
 

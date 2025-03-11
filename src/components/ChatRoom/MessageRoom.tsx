@@ -11,7 +11,9 @@ interface MessageRoomProps {
 export const MessageRoom = ({ username, room, socket }: MessageRoomProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState("");
-  const [messageList, setMessageList] = useState<MessageData[]>([]);
+  const [messageList, setMessageList] = useState<Record<string, MessageData[]>>(
+    {}
+  );
 
   const handleSendMessage = useCallback(() => {
     if (!socket || !messageText.trim() || !room?.id) {
@@ -39,13 +41,15 @@ export const MessageRoom = ({ username, room, socket }: MessageRoomProps) => {
     setMessageText("");
   }, [socket, messageText, room, username]);
 
-  console.log(username);
-
   useEffect(() => {
     if (!socket) return;
 
     const handleReceiveMessage = (message: MessageData) => {
-      setMessageList((prev) => [...prev, message]);
+      setMessageList((prev) => {
+        const newList = { ...prev };
+        newList[room.id] = [...(newList[room.id] || []), message];
+        return newList;
+      });
     };
 
     socket.on("receiveMessageRoom", handleReceiveMessage);
@@ -53,13 +57,13 @@ export const MessageRoom = ({ username, room, socket }: MessageRoomProps) => {
     return () => {
       socket.off("receiveMessageRoom", handleReceiveMessage);
     };
-  }, [socket]);
+  }, [socket, room.id]);
 
   useEffect(() => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  }, [messageList]);
+    });
+  }, [messageList, room.id]);
 
   return (
     <div className="message-room-list">
@@ -71,7 +75,8 @@ export const MessageRoom = ({ username, room, socket }: MessageRoomProps) => {
           padding: "10px",
         }}
       >
-        {messageList.map((msg: MessageData, index: number) => (
+        {/* Filtra y muestra solo los mensajes de la sala actual */}
+        {messageList[room.id]?.map((msg, index) => (
           <div
             key={index}
             style={{
